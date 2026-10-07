@@ -128,8 +128,28 @@ Definicja: `{ timeout: 30_000, intervals: [2_000] }`. **NIGDY bez POLL_CONFIG.**
 ### beforeEach / afterEach
 
 - **beforeEach:** create freight + publish + poll ACTIVE + setup exchanges
-- **afterEach:** `deleteFreight(request, xUserId, id, [NO_CONTENT, NOT_FOUND, FORBIDDEN])`
+- **afterEach:** cleanup WSZYSTKICH stworzonych zasobów — nie tylko `freightId` z beforeEach, ale też zasoby tworzone w test body
 - **test body:** specyficzna akcja + asercje + warunkowy poll
+
+**Wzorzec cleanup — tracking wielu IDs:**
+```ts
+const createdFreightIds: number[] = [];
+
+test.beforeEach('Create freight', async ({ request }) => {
+  const body = await createFreight(request, TFS.xUserId, payload);
+  freightId = body.id;
+  createdFreightIds.push(freightId);
+});
+
+test.afterEach('Cleanup freights', async ({ request }) => {
+  for (const id of createdFreightIds) {
+    await deleteFreight(request, TFS.xUserId, id, [StatusCodes.NO_CONTENT, StatusCodes.NOT_FOUND]);
+  }
+  createdFreightIds.length = 0;
+});
+```
+Jeśli test tworzy dodatkowe zasoby (np. drugi freight w mass action) — dodaj ID do tablicy: `createdFreightIds.push(secondFreightId)`.
+**NIGDY nie czyść tylko jednego zasobu gdy testy mogą tworzyć wiele.**
 
 ### Parametryzacja
 
@@ -193,7 +213,16 @@ export const buildAfganistanFreightPayload = (
 2. **Base URL**: config pola (`apiFreightsHost` itd.) już zawierają `/api/rest/` — w service TYLKO `v2/xxx`
 3. **Config fields**: konta to `transId`/`xUserId`/`companyId` — NIE `login`/`accountId`. URL-e to `apiFreightsHost`
 4. **Response verify**: API zwraca dodatkowe pola — `expect.objectContaining({ ...payload.field })` z spread
-5. **ESLint `playwright/prefer-to-have-length`**: na `body.length` (IMeasure) dodaj disable comment
+5. **ESLint `playwright/prefer-to-have-length`**: na `body.length` (IMeasure) — wyciągnij do zmiennej zamiast `eslint-disable`:
+   ```ts
+   // CORRECT — zmienna omija regułę ESLint bez komentarza disable
+   const freightLength = body.length;
+   expect.soft(freightLength).toEqual(expect.objectContaining({ ...payload.length }));
+   
+   // WRONG — eslint-disable to ostateczność
+   // eslint-disable-next-line playwright/prefer-to-have-length
+   expect.soft(body.length).toEqual(expect.objectContaining({ ...payload.length }));
+   ```
 6. **Status codes**: `await expect(response).toBeOK()` dla 200, `expect(response.status()).toBe(StatusCode.XXX)` dla 201/204/404
 7. **Enum VALUES nie nazwy**: NIGDY `'in_advance'` — sprawdź wartość (`PaymentPeriod.IN_ADVANCE = '2_payment_in_advance'`). Dotyczy: PaymentPeriod, Sources, PublicationType, SettlementBasis
 8. **load_id**: `crypto.randomUUID()` w `loads[]` TYLKO dla multispot (`multi_stops: true`)
@@ -208,6 +237,46 @@ export const buildAfganistanFreightPayload = (
 17. **JiraId OBOWIĄZKOWY**: `JiraId('TT-XXXXX')` jako DRUGI argument `test()`. Tytuł po polsku BEZ diakrytyków
 18. **beforeEach dla powtarzalnego setup**: create + publish + poll ACTIVE → beforeEach
 19. **Parametryzacja**: powtarzalne testy → `I*TestCase` + tablica + for loop
+20. **Mass action >1 element**: testy "mass action" (np. `deleteFreights`) MUSZĄ operować na >1 elemencie — usunięcie jednego nie testuje masowości. Twórz dodatkowe zasoby w test body i dodaj je do tablicy cleanup
+21. **Generic types na service calls**: gdy test operuje na `body` (odczytuje pola) — ZAWSZE podaj generic type: `getFreightById<IFreightPayload>(...)`. Bez generica `body` to `Record<string, unknown>` i brak typowania
+22. **Importy z barrel**: `from '@/helpers'` (barrel) — NIE `from '@/helpers/utils'` (bezpośredni). Barrel jest konwencją projektu. Wyjątek: gdy importujesz coś co NIE jest wyeksportowane w barrel
+23. **Nazwy zmiennych — intencja, nie lokalizacja**: `initialFreightPayload` / `updatedFreightPayload` — NIE `freightAfganistan` / `freightKotka`. Nazwy powinny opisywać rolę w teście, nie dane geograficzne z factory
+24. **expect.soft konsekwentnie**: w testach API używaj `expect.soft()` dla WSZYSTKICH asercji na body/status — nie mieszaj `expect()` i `expect.soft()` w tym samym teście. Hard `expect()` rezerwuj dla warunków blokujących dalsze kroki (np. sprawdzenie że zasób istnieje przed operacją na nim)
+25. **afterEach — warunkowy cleanup z cancel+archive**: w testach negocjacji afterEach MUSI sprawdzić status publikacji (`pubBody.status === 'active'`) przed `cancelPublication` + `archiveFreight`. Bezwarunkowe cancel na anulowanej publikacji = błąd. Wzorzec:
+    ```ts
+    test.afterEach('Cancel publication and archive freight', async ({ request }) => {
+      const { body: pubBody } = await getPublicationById(request, TFS.xUserId, publicationId, Product.TFS);
+      if (pubBody.status === 'active') {
+        await cancelPublication(request, TFS.xUserId, publicationId);
+        await archiveFreight(request, TFS.xUserId, freightId);
+      }
+    });
+    ```
+26. **Inline assertion helpers**: gdy test powtarza złożoną asercję (np. sprawdź cenę w liście negocjacji), wyciągnij do `const` function NA POZIOMIE PLIKU (nie klasy) z `expect.soft` wewnątrz. Wzorzec z `multipleCarriers.spec.ts`:
+    ```ts
+    const assertPriceList = (body: INegotiationsListResponse, payment: IPayment, index = 0): void => {
+      const n = body._embedded.negotiations[index];
+      expect.soft(n).toBeTruthy();
+      if (!n) return;
+      expect.soft(n.price.value).toBe(payment.price.value);
+    };
+    ```
+27. **History verification pattern**: weryfikacja historii negocjacji — buduj tablicę expected events w odwrotnej kolejności (od najnowszego), potem iteruj `forEach((expected, i) => expect(history[i]).toEqual(expect.objectContaining(expected)))`. ZAWSZE sprawdź z OBU stron (TFS i TFC)
+28. **env-conditional parametryzacja — ternary pattern**: dla skomplikowanego filtrowania per env, zamiast `let arr = [...]; if (prod) arr = [...]` użyj ternary `(env === 'prod' ? [...prod cases...] : [...all cases...]).forEach(...)` — czytelniejsze gdy test cases mają strukturę obiektową z jiraId
+29. **test.beforeAll vs test.beforeEach**: `beforeAll` dla ONE-TIME setup (exchange members, SafePay tags, fetch all data for list tests). `beforeEach` dla PER-TEST setup (create freight + publish). Cypress `before()` → Playwright `beforeAll`, Cypress `beforeEach()` → Playwright `beforeEach`. NIGDY nie twórz frachtu w `beforeAll` — to shared state między testami
+30. **IssueId type**: `as IssueId` (import z `playwright-core`) do type assertion na Jira ID w parametryzacji. Wzorzec: `jiraId: 'TT-17709' as IssueId`
+31. **test.skip wewnątrz test body**: `test.skip(condition, reason)` jako PIERWSZA linia test body (po destructuring). NIE w beforeEach, NIE za test.step. Wzorzec: `test.skip(env.toLowerCase() === 'prod', 'Skipped on PROD')`
+32. **nullPayment pattern**: gdy API pozwala na null w cenie (initial publication bez ceny) — `{ price: { currency: null as unknown as string, value: null } }`. NIE pomijaj pól — API wymaga pełnej struktury
+33. **Inline generic types na service calls**: gdy odpowiedź ma niestandardową strukturę — definiuj typ inline: `getNegotiationsList<{ _embedded: { negotiations: { id: string }[] } }>(...)`. NIE twórz interfejsu dla jednorazowych typów
+34. **exchangeManageHelper w beforeEach/beforeAll**: setup exchange members MUSI być PRZED publikacją. Jeśli w `beforeAll` (z `setTimeout` delay 10s po dodaniu) — to one-time. Jeśli w `beforeEach` per publication type — to per-test. Cypress `before()` z `addMemberToCorporateExchange` → Playwright `beforeEach`/`beforeAll` z `exchangeManageHelper`
+35. **Permissive codes w cleanup — pełna lista**: `[StatusCodes.NO_CONTENT, StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN]` dla deleteFreight. `[StatusCodes.CREATED, StatusCodes.UNPROCESSABLE_ENTITY]` dla cancelPublication. `[StatusCodes.CREATED, StatusCodes.FORBIDDEN]` dla archiveFreight. NIE pomijaj FORBIDDEN — inny test mógł zaakceptować fracht
+36. **describe name — descriptive, not test class name**: `test.describe('Freight actions', ...)` — NIE `test.describe('FreightsActionsTest', ...)`. Nazwa po angielsku, descriptive, bez suffixu "Test"
+37. **POLL_CONFIG_LONG dla conversation/sequential**: `POLL_CONFIG_LONG` (`{ timeout: 60_000, intervals: [2_000] }`) używaj zamiast `POLL_CONFIG` dla: `getConversationHasNegotiation`, `getFirstReceiverStatus` i inne operacje wymagające dłuższego oczekiwania (negocjacje z kontraktami, sequential). Import z `@/helpers`
+38. **NegotiationActions — instancja w test body**: `new NegotiationActions(request, freightId, auctionId, offerId)` ZAWSZE wewnątrz `test.step` w test body — NIGDY w beforeEach. Powód: wymaga `auctionId`/`offerId` które powstają dopiero po publikacji w test flow
+39. **`import { type X }` syntax**: ZAWSZE używaj `type` keyword dla importów interfejsów/typów: `import { type IFreightPayload } from '@/models'`. Nie `import { IFreightPayload }`. Konwencja TypeScript — oddziela typy od wartości runtime
+40. **`Object.values(Enum).forEach()` dla pełnej parametryzacji**: gdy test weryfikuje WSZYSTKIE wartości enuma (np. filtrowanie po truck bodies, load types) — `Object.values(TruckBodies).forEach((value) => { test(...) })`. NIE hardcoduj listy — zmiany enuma = automatycznie nowe testy
+41. **List/filter testy — asercje na COUNT, nie treść**: testy listowania/filtrowania sprawdzają tylko `body.total_count > 0` lub `body.total_count >= expectedCount`. NIE sprawdzaj treści elementów listy — inne testy mogą dodawać/usuwać dane. Sort testy sprawdzają kolejność (np. daty malejąco)
+42. **Cleanup spec — bez JiraId, polskie nazwy**: pliki `massDeleteFreight.spec.ts` i podobne cleanup utility specs NIE używają `JiraId()`. Tytuły testów po polsku w formie imperatywnej: `'Usun frachty dla konta ListTFS'`. Cleanup operuje na paginacji i iteruje po stronach
 
 ## Dokumentacja docelowego repo (do czytania)
 

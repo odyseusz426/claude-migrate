@@ -61,6 +61,25 @@ Na tej podstawie generujesz WSZYSTKIE pliki migracji naraz.
 - **Kontekst zmiennych:** jeśli source używa shared state (np. Mocha `this.`) — zamień na `let` w scope
 - **Parametryzacja:** jeśli testy różnią się danymi → interface + tablica + loop (wg presetu)
 - **Setup/cleanup:** powtarzalny setup → beforeEach, cleanup → afterEach (wg presetu)
+- **Cleanup — tracking wielu zasobów:** gdy testy tworzą zasoby (beforeEach i/lub test body) → tablica `createdXxxIds: number[]`, push w obu miejscach, iteracja w afterEach, `arr.length = 0` na końcu. NIGDY nie czyść tylko jednego zasobu
+- **Mass action >1 element:** testy mass action MUSZĄ operować na >1 elemencie — twórz dodatkowe zasoby w test body
+- **Generic types:** gdy test odczytuje pola z body → podaj generic: `getFreightById<IFreightPayload>(...)`
+- **Nazwy zmiennych:** opisuj intencję w teście (`initialPayload`/`updatedPayload`), NIE dane z factory (`freightAfganistan`)
+- **Importy z barrel:** `from '@/helpers'` — NIE `from '@/helpers/utils'`
+- **expect.soft konsekwentnie:** w testach API `expect.soft()` dla asercji na body/status. Hard `expect()` tylko dla warunków blokujących dalsze kroki
+- **afterEach negotiations — warunkowy cleanup:** sprawdź `pubBody.status === 'active'` przed cancel+archive. Bezwarunkowe cancel na anulowanej = błąd
+- **test.skip w test body:** `test.skip(condition, reason)` jako PIERWSZA linia test body. NIE w beforeEach
+- **describe name — descriptive:** `test.describe('Freight actions', ...)` — NIE `test.describe('FreightsActionsTest', ...)`
+- **Inline generic types:** `getNegotiationsList<{ _embedded: { negotiations: { id: string }[] } }>(...)` — NIE twórz interfejsu dla jednorazowych typów
+- **History verification:** tablica expected events w odwrotnej kolejności, iteracja `forEach`, sprawdź z OBU stron (TFS + TFC)
+- **Permissive codes — pełna lista:** deleteFreight: `[NO_CONTENT, NOT_FOUND, FORBIDDEN]`. cancelPublication: `[CREATED, UNPROCESSABLE_ENTITY]`. archiveFreight: `[CREATED, FORBIDDEN]`
+- **beforeAll vs beforeEach:** exchange setup / SafePay tags → beforeAll. Create freight → beforeEach. NIGDY freight w beforeAll
+- **POLL_CONFIG_LONG:** `{ timeout: 60_000, intervals: [2_000] }` — używaj dla `getConversationHasNegotiation`, `getFirstReceiverStatus` i inne operacje wymagające dłuższego oczekiwania. Import z `@/helpers`
+- **NegotiationActions — instancja w test body:** `new NegotiationActions(...)` ZAWSZE wewnątrz `test.step` — NIGDY w beforeEach. Wymaga danych z publikacji (auctionId/offerId)
+- **`import { type X }` syntax:** ZAWSZE `type` keyword dla importów interfejsów: `import { type IFreightPayload }`. Oddziela typy od runtime values
+- **`Object.values(Enum).forEach()`:** dla pełnej parametryzacji enuma — NIE hardcoduj listy wartości
+- **List/filter testy — count only:** asercje na `total_count`, NIE na treść elementów. Sort testy sprawdzają kolejność
+- **Cleanup spec — bez JiraId:** utility cleanup specs nie używają `JiraId()`, tytuły po polsku imperatywnie
 
 ## Format raportu
 

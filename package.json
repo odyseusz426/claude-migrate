@@ -1,6 +1,6 @@
 {
   "name": "@odyseusz426/claude-migrate",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Universal migration toolkit for Claude Code (SDD extension)",
   "type": "module",
   "bin": {

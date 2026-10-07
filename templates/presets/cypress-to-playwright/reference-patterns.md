@@ -26,22 +26,32 @@ src/configs/                   # Konfiguracja environments i kont
 
 **Kluczowa zasada:** helpery NIGDY nie zawierają expect ani poll. Zwracają dane — test decyduje co zweryfikować.
 
-## POLL_CONFIG — globalna konfiguracja pollingu
+## POLL_CONFIG / POLL_CONFIG_LONG — konfiguracja pollingu
 
 ```ts
 // src/helpers/utils/poll.config.ts
 export const POLL_CONFIG = { timeout: 30_000, intervals: [2_000] };
+export const POLL_CONFIG_LONG = { timeout: 60_000, intervals: [2_000] };
 ```
 
 **ZAWSZE** przekazywany jako drugi argument `expect.poll()`:
 
+- `POLL_CONFIG` — domyślny (30s) — publikacje, statusy, proste operacje
+- `POLL_CONFIG_LONG` — dłuższy (60s) — `getConversationHasNegotiation`, `getFirstReceiverStatus`, operacje wymagające przetwarzania (negocjacje z kontraktami, sequential)
+
 ```ts
+// Standard — POLL_CONFIG
 await expect
   .poll(async () => {
     const { body } = await getPublicationById(request, TFS.xUserId, publicationId, Product.TFS);
     return body.status;
   }, POLL_CONFIG)
   .toBe(PublicationStatus.ACTIVE);
+
+// Long — POLL_CONFIG_LONG (conversations, sequential contracts)
+await expect
+  .poll(async () => getConversationHasNegotiation(request, TFC.xUserId, publicationId), POLL_CONFIG_LONG)
+  .toBe(true);
 ```
 
 ## Wzorce helperów
@@ -135,19 +145,89 @@ if (equalsIgnoreCase(env, 'PROD')) {
 
 ## beforeEach / afterEach
 
-### Co idzie do beforeEach
+### Co idzie do beforeAll (one-time setup)
+- Exchange members setup (`exchangeManageHelper`)
+- SafePay tags setup (`setSafePayTag`)
+- Fetch all data for list tests (`getAllFreights`)
+- **NIGDY** tworzenie frachtu — to shared state między testami
+
+### Co idzie do beforeEach (per-test setup)
 - Tworzenie frachtu (`createFreight`)
 - Publikacja (`publishFreightSpot` / `PublicationSwitcher`)
 - Poll na ACTIVE status
-- Setup gield
+- Per-test exchange setup (jeśli zależy od parametru forEach)
 
 ### Co idzie do afterEach
-- Cleanup: `deleteFreight` z permissive codes `[NO_CONTENT, NOT_FOUND, FORBIDDEN]`
+- Cleanup WSZYSTKICH stworzonych zasobów — tablica IDs, iteracja, `arr.length = 0`
+- Permissive codes: `[NO_CONTENT, NOT_FOUND, FORBIDDEN]`
+- **NIGDY** nie czyść tylko jednego zasobu gdy testy mogą tworzyć wiele (np. mass action tworzy dodatkowe w test body)
+
+```ts
+const createdFreightIds: number[] = [];
+
+test.afterEach('Cleanup freights', async ({ request }) => {
+  for (const id of createdFreightIds) {
+    await deleteFreight(request, TFS.xUserId, id, [StatusCodes.NO_CONTENT, StatusCodes.NOT_FOUND]);
+  }
+  createdFreightIds.length = 0;
+});
+```
+
+### afterEach — wariant negocjacje (warunkowy cancel+archive)
+
+```ts
+test.afterEach('Cancel publication and archive freight', async ({ request }) => {
+  const { body: pubBody } = await getPublicationById(request, TFS.xUserId, publicationId, Product.TFS);
+  if (pubBody.status === 'active') {
+    await cancelPublication(request, TFS.xUserId, publicationId);
+    await archiveFreight(request, TFS.xUserId, freightId);
+  }
+});
+```
+
+### Permissive codes — pełna lista per service
+
+| Service | Permissive codes |
+|---------|-----------------|
+| `deleteFreight` | `[NO_CONTENT, NOT_FOUND, FORBIDDEN]` |
+| `cancelPublication` | `[CREATED, UNPROCESSABLE_ENTITY]` |
+| `archiveFreight` | `[CREATED, FORBIDDEN]` |
 
 ### Co zostaje w tescie
+- `test.skip(condition, reason)` — PIERWSZA linia
 - Specyficzna akcja testowa
 - Asercje na wynik akcji
 - Warunkowe expect.poll na zmiane statusu
+
+## Inline assertion helpers
+
+Gdy test powtarza złożoną asercję — wyciągnij do `const` function na poziomie pliku:
+
+```ts
+const assertPriceList = (body: INegotiationsListResponse, payment: IPayment, index = 0): void => {
+  const n = body._embedded.negotiations[index];
+  expect.soft(n).toBeTruthy();
+  if (!n) return;
+  expect.soft(n.price.value).toBe(payment.price.value);
+  expect.soft(n.price.currency).toBe(payment.price.currency);
+};
+```
+
+## History verification pattern
+
+```ts
+const expectedHistory = [
+  negotiationHistoryEvent(NegotiationHistoryEventName.NEGOTIATION_OWNER_ACCEPT, TFS.xUserId, payment2),
+  negotiationHistoryEvent(NegotiationHistoryEventName.NEGOTIATION_PARTICIPANT_OFFER, TFC.xUserId, payment2),
+  negotiationHistoryEvent(NegotiationHistoryEventName.NEGOTIATION_OWNER_OFFER, TFS.xUserId, payment),
+  negotiationHistoryEvent(NegotiationHistoryEventName.NEGOTIATION_CREATED, TFS.xUserId, initialPayment),
+];
+// Sprawdź z OBU stron
+const historyFromTFS = await getHistory(request, TFS.xUserId, negotiationId);
+expectedHistory.forEach((expected, i) => expect(historyFromTFS[i]).toEqual(expect.objectContaining(expected)));
+const historyFromTFC = await getHistory(request, TFC.xUserId, negotiationId);
+expectedHistory.forEach((expected, i) => expect(historyFromTFC[i]).toEqual(expect.objectContaining(expected)));
+```
 
 ## Serwisy — wzorzec
 
@@ -168,6 +248,53 @@ export const createFreight = async (
 export const buildAfganistanFreightPayload = (
   overrides?: Partial<IFreightPayload>,
 ): IFreightPayload => deepMerge(buildBaseFreightPayload([...spots]), overrides);
+```
+
+## Import convention — `type` keyword
+
+```ts
+// CORRECT — type keyword for interfaces/types
+import { type APIRequestContext, expect, test } from '@playwright/test';
+import { type IFreightPayload } from '@/models';
+import { type IPayment } from '@/models';
+
+// WRONG — no type keyword
+import { APIRequestContext, expect, test } from '@playwright/test';
+import { IFreightPayload } from '@/models';
+```
+
+## NegotiationActions — instancja w test body
+
+NegotiationActions ZAWSZE tworzony wewnątrz `test.step` — wymaga `auctionId`/`offerId` z publikacji:
+
+```ts
+test('[TT-XXXXX] Negotiate', JiraId('TT-XXXXX'), async ({ request }) => {
+  await test.step('Step 3: Negotiate', async () => {
+    const negotiationActions = new NegotiationActions(request, freightId, auctionId, offerId);
+    await negotiationActions.accept(TFC, TFS);
+  });
+});
+```
+
+## List/filter testy — count only
+
+```ts
+// CORRECT — asercja na count
+expect.soft(body.total_count).toBeGreaterThan(0);
+expect.soft(body.total_count).toBeGreaterThanOrEqual(expectedCount);
+
+// WRONG — asercja na treść elementów (inne testy mogą zmienić dane)
+expect.soft(body._embedded.freights[0].id).toBe(freightId);
+```
+
+## Enum parametryzacja — Object.values
+
+```ts
+Object.values(TruckBodies).forEach((truckBody) => {
+  test(`Filter by truck body: ${truckBody}`, async ({ request }) => {
+    // ...filter and assert count
+  });
+});
 ```
 
 ## Mapowanie Cypress → Playwright
@@ -198,15 +325,20 @@ const TFC = config.env.TFC;
 
 test.describe('Opis grupy', () => {
   let freightId: number;
+  const createdFreightIds: number[] = [];
+  const initialPayload = buildAfganistanFreightPayload();
 
-  test.beforeEach('Create and publish freight', async ({ request }) => {
-    // setup
+  test.beforeEach('Create freight', async ({ request }) => {
+    const body = await createFreight(request, TFS.xUserId, initialPayload);
+    freightId = body.id;
+    createdFreightIds.push(freightId);
   });
 
-  test.afterEach('Delete freight', async ({ request }) => {
-    await deleteFreight(request, TFS.xUserId, freightId, [
-      StatusCodes.NO_CONTENT, StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN,
-    ]);
+  test.afterEach('Cleanup freights', async ({ request }) => {
+    for (const id of createdFreightIds) {
+      await deleteFreight(request, TFS.xUserId, id, [StatusCodes.NO_CONTENT, StatusCodes.NOT_FOUND]);
+    }
+    createdFreightIds.length = 0;
   });
 
   test('[TT-XXXXX] Jako nadawca powinienem moc ...', JiraId('TT-XXXXX'), async ({ request }) => {

@@ -13,16 +13,16 @@ const force = args.includes("--force");
 
 function copy(from, to, label) {
   if (!existsSync(from)) {
-    console.error(`Source not found: ${from}`);
+    console.error(`Źródło nie znalezione: ${from}`);
     process.exit(1);
   }
   if (existsSync(to) && !force) {
-    console.error(`Target already exists: ${to}`);
-    console.error(`Use --force to overwrite.`);
+    console.error(`Cel już istnieje: ${to}`);
+    console.error(`Użyj --force żeby nadpisać.`);
     process.exit(1);
   }
   cpSync(from, to, { recursive: true, force });
-  console.log(`\u2713 ${label || from} \u2192 ${to}${force ? " (overwritten)" : ""}`);
+  console.log(`\u2713 ${label || from} \u2192 ${to}${force ? " (nadpisano)" : ""}`);
 }
 
 function listPresets() {
@@ -46,13 +46,13 @@ switch (command) {
     const presets = listPresets();
 
     console.log(`
-Migration toolkit installed.
+Toolkit migracji zainstalowany.
 
-Commands: /migrate, /migrate-setup, /migrate-cr, /migrate-fix
-Agents:   migration-analyzer, migration-writer, migration-supervisor, migration-cr
+Komendy:  /migrate, /migrate-setup, /migrate-cr, /migrate-fix
+Agenci:   migration-analyzer, migration-writer, migration-supervisor, migration-cr
 
-Available presets: ${presets.length ? presets.join(", ") : "(none)"}
-Load a preset:  claude-migrate preset ${presets[0] || "<name>"}
+Dostępne presety: ${presets.length ? presets.join(", ") : "(brak)"}
+Załaduj preset:   claude-migrate preset ${presets[0] || "<nazwa>"}
 `);
     break;
   }
@@ -62,19 +62,19 @@ Load a preset:  claude-migrate preset ${presets[0] || "<name>"}
     if (!presetName) {
       const presets = listPresets();
       if (presets.length === 0) {
-        console.error("No presets available.");
+        console.error("Brak dostępnych presetów.");
         process.exit(1);
       }
-      console.log("Available presets:");
+      console.log("Dostępne presety:");
       presets.forEach((p) => console.log(`  - ${p}`));
-      console.log(`\nUsage: claude-migrate preset <name> [--force]`);
+      console.log(`\nUżycie: claude-migrate preset <nazwa> [--force]`);
       process.exit(0);
     }
 
     const presetSrc = join(presetsDir, presetName);
     if (!existsSync(presetSrc)) {
-      console.error(`Preset not found: ${presetName}`);
-      console.error(`Available: ${listPresets().join(", ") || "(none)"}`);
+      console.error(`Preset nie znaleziony: ${presetName}`);
+      console.error(`Dostępne: ${listPresets().join(", ") || "(brak)"}`);
       process.exit(1);
     }
 
@@ -93,10 +93,10 @@ Load a preset:  claude-migrate preset ${presets[0] || "<name>"}
     }
 
     console.log(`
-Preset "${presetName}" loaded.
+Preset "${presetName}" załadowany.
 
-Preset file: .claude/migrate.preset.md
-Ready to migrate: /migrate <source-file> --propose
+Plik presetu: .claude/migrate.preset.md
+Gotowe do migracji: /migrate <plik-źródłowy> --propose
 `);
     break;
   }
@@ -104,9 +104,9 @@ Ready to migrate: /migrate <source-file> --propose
   case "presets": {
     const presets = listPresets();
     if (presets.length === 0) {
-      console.log("No presets available.");
+      console.log("Brak dostępnych presetów.");
     } else {
-      console.log("Available presets:");
+      console.log("Dostępne presety:");
       presets.forEach((p) => console.log(`  - ${p}`));
     }
     break;
@@ -119,15 +119,15 @@ Ready to migrate: /migrate <source-file> --propose
 
   default:
     console.log(`
-Claude Migrate v${pkg.version} \u2014 Universal migration toolkit for Claude Code
+Claude Migrate v${pkg.version} \u2014 Uniwersalny toolkit migracji
 
-Usage:
-  claude-migrate init                     install agents & commands into project
-  claude-migrate init --force             overwrite existing files
-  claude-migrate preset <name>            load a technology preset
-  claude-migrate preset <name> --force    overwrite existing preset
-  claude-migrate presets                  list available presets
-  claude-migrate --version               show version
+Użycie:
+  claude-migrate init                     instaluje agentów i komendy w projekcie
+  claude-migrate init --force             nadpisuje istniejące pliki
+  claude-migrate preset <nazwa>           ładuje preset technologiczny
+  claude-migrate preset <nazwa> --force   nadpisuje istniejący preset
+  claude-migrate presets                  lista dostępnych presetów
+  claude-migrate --version               wersja paczki
 `);
     process.exit(command ? 1 : 0);
 }
