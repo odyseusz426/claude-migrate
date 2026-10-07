@@ -1,14 +1,13 @@
 {
   "name": "@odyseusz426/claude-migrate",
-  "version": "1.0.2",
-  "description": "Cypress → Playwright migration toolkit for Claude Code (SDD extension)",
+  "version": "2.0.0",
+  "description": "Universal migration toolkit for Claude Code (SDD extension)",
   "type": "module",
   "bin": {
     "claude-migrate": "./bin/cli.js"
   },
   "files": [
     "bin",
-    "lib",
     "templates",
     "skills.json"
   ],

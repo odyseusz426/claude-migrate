@@ -1,26 +1,31 @@
 {
   "package": "@odyseusz426/claude-migrate",
-  "label": "Cypress → Playwright Migration",
+  "label": "Universal Migration Toolkit",
   "skills": [
     {
       "command": "/migrate",
-      "when": "Migracja pliku Cypress → Playwright — analiza + generowanie + review",
-      "agent": "migration-analyzer, migration-spec-writer, migration-supervisor"
+      "when": "Migracja pliku z technologii źródłowej na docelową — analiza + generowanie + review",
+      "agent": "migration-analyzer, migration-writer, migration-supervisor"
+    },
+    {
+      "command": "/migrate-setup",
+      "when": "Konfiguracja migracji — wybór presetu technologicznego lub ręczna definicja reguł",
+      "agent": null
     },
     {
       "command": "/migrate-cr",
-      "when": "Poprawki po Code Review do zmigrowanych testów Playwright",
+      "when": "Poprawki po Code Review do zmigrowanych plików",
       "agent": "migration-cr"
     },
     {
       "command": "/migrate-fix",
-      "when": "Debug i naprawa failujących zmigrowanych testów",
+      "when": "Debug i naprawa failujących zmigrowanych testów/plików",
       "agent": null
     },
     {
-      "command": "/migrate-split",
-      "when": "Podział brancha migracyjnego na atomowe MR — 1 spec = 1 branch",
-      "agent": "migration-split"
+      "command": "/migrate-preset-create",
+      "when": "Tworzenie nowego presetu migracji na podstawie analizy repozytoriów",
+      "agent": null
     }
   ]
 }

@@ -1,83 +1,87 @@
 # Skills — @odyseusz426/claude-migrate
 
-Rozszerzenie SDD Framework dostarczające komendy i agentów do migracji testów Cypress → Playwright.
+Uniwersalny toolkit migracji dla Claude Code. Technologia źródłowa i docelowa definiowana przez presety.
 
 ## Komendy
 
-### `/migrate`
+### `/migrate setup`
 
-Migracja pliku Cypress → Playwright — analiza + generowanie + review.
+Konfiguracja migracji — wybór presetu technologicznego lub ręczna definicja reguł i repozytoriów referencyjnych.
 
 ```
-/migrate <plik.cy.ts lub katalog> [--target <ścieżka>] [--propose]
+/migrate setup                                → interaktywna konfiguracja
+/migrate setup --preset cypress-to-playwright  → załaduj preset
+```
+
+**Flow:** Wybór presetu / definicja reguł → Konfiguracja repozytoriów → Zapis `.claude/migrate.preset.md`
+
+---
+
+### `/migrate`
+
+Migracja pliku z technologii źródłowej na docelową — analiza + generowanie + review.
+
+```
+/migrate <plik lub katalog> [--target <ścieżka>] [--propose]
 ```
 
 | Parametr | Opis |
 |----------|------|
-| `<source>` | Plik `.cy.ts` lub katalog (rekursywnie) |
-| `--target <dest>` | Repo docelowe Playwright |
+| `<source>` | Plik źródłowy lub katalog (rekursywnie) |
+| `--target <dest>` | Repo docelowe |
 | `--propose` | Tylko analiza i plan, bez generowania kodu |
 
-**Flow:** Analiza (sesja główna) → Generowanie (`migration-spec-writer`) → Review (`migration-supervisor`) → Synchronizacja `ai/docs/`
+**Wymaga:** `.claude/migrate.preset.md` (z `/migrate setup`)
 
-**Agenci:** `migration-spec-writer`, `migration-supervisor`
+**Flow:** Analiza (sesja główna) → Generowanie (`migration-writer`) → Review (`migration-supervisor`) → Synchronizacja `ai/docs/`
 
 ---
 
 ### `/migrate-cr`
 
-Poprawki po Code Review do zmigrowanych testów Playwright.
+Poprawki po Code Review do zmigrowanych plików.
 
 ```
-/migrate-cr [--file <plik.spec.ts>]
+/migrate-cr [--file <ścieżka>]
 ```
-
-| Parametr | Opis |
-|----------|------|
-| `--file <ścieżka>` | Plik `.spec.ts` którego dotyczy CR (opcjonalne) |
 
 **Flow:** Zebranie uwag → Analiza (sesja główna) → Poprawki (`migration-cr`) → Prezentacja i zapis
-
-**Agent:** `migration-cr`
 
 ---
 
 ### `/migrate-fix`
 
-Diagnoza i naprawa testów Playwright które failują, a w Cypress działają.
+Diagnoza i naprawa plików docelowych które failują, a w źródłowej technologii działają.
 
 ```
-/migrate-fix <plik.spec.ts> [--all]
+/migrate-fix <plik> [--all]
 ```
 
 | Parametr | Opis |
 |----------|------|
-| `<plik.spec.ts>` | Test Playwright do naprawy |
+| `<plik>` | Plik docelowy do naprawy |
 | `--all` | Propaguj fix do innych plików z tym samym błędem |
 
-**Flow:** Odpal test → Znajdź Cypress odpowiednik → Diagnoza (znane pułapki → debug API → porównanie payloadów) → Napraw → Propagacja → Aktualizacja `ai/docs/`
-
-**Agent:** brak (sesja główna)
+**Flow:** Odpal test → Znajdź odpowiednik źródłowy → Diagnoza (znane pułapki → debug → porównanie) → Napraw → Propagacja → Aktualizacja docs + preset
 
 ---
 
-### `/migrate-split`
+### `/migrate preset-create`
 
-Podział brancha migracyjnego na atomowe MR — 1 klasa testowa = 1 branch = 1 MR.
+Tworzenie nowego presetu migracji — analizuje repo źródłowe i docelowe, rozpoznaje wzorce, generuje plik presetu.
 
 ```
-/migrate-split [<nazwa-spec>] [--all] [--target <branch>]
+/migrate preset-create <nazwa> [--source <ścieżka>] [--target <ścieżka>] [--reference <ścieżka>]
 ```
 
 | Parametr | Opis |
 |----------|------|
-| `<nazwa-spec>` | Konkretny spec do przeniesienia |
-| `--all` | Analiza wszystkich speców + plan podziału |
-| `--target <branch>` | Branch docelowy MR (domyślnie: `master`) |
+| `<nazwa>` | Nazwa presetu (kebab-case, np. `jest-to-vitest`) |
+| `--source` | Repo z kodem źródłowym |
+| `--target` | Repo z kodem docelowym |
+| `--reference` | Repo z już zmigrowanym kodem do wzorowania |
 
-**Flow:** Analiza zależności (sesja główna) → Plan → Kopiowanie (`migration-split`) → Weryfikacja
-
-**Agent:** `migration-split`
+**Flow:** Analiza source → Analiza target/reference → Pytania o decyzje (jeśli brak wzorców) → Generowanie presetu → Zapis `.claude/migrate.preset.md`
 
 ---
 
@@ -85,22 +89,45 @@ Podział brancha migracyjnego na atomowe MR — 1 klasa testowa = 1 branch = 1 M
 
 | Agent | Rola | Model |
 |-------|------|-------|
-| `migration-analyzer` | Analiza pliku Cypress — importy, commands, Jira IDs | sonnet |
-| `migration-spec-writer` | Generowanie kodu Playwright (services + factories + enums + models + spec) | sonnet |
-| `migration-supervisor` | Review kompletności i spójności migracji (PASS/FAIL) | opus |
+| `migration-analyzer` | Analiza pliku źródłowego — importy, commands, IDs, flow | opus |
+| `migration-writer` | Generowanie kodu docelowego (services + factories + testy) | sonnet |
+| `migration-supervisor` | Review kompletności i spójności (PASS/FAIL) | opus |
 | `migration-cr` | Aplikowanie uwag z Code Review | sonnet |
-| `migration-split` | Kopiowanie plików per spec do atomowych branchy | sonnet |
+
+## Presety
+
+Presety zawierają wiedzę specyficzną dla pary technologii (reguły, mapowania, wzorce).
+
+| Preset | Source → Target |
+|--------|----------------|
+| `cypress-to-playwright` | Cypress → Playwright (API tests) |
+
+### Ładowanie presetu
+
+```bash
+claude-migrate preset cypress-to-playwright
+```
+
+Lub interaktywnie: `/migrate setup`
+
+### Tworzenie własnego presetu
+
+```
+/migrate preset-create jest-to-vitest --source ../jest-app --target ../vitest-app
+```
+
+Komenda analizuje oba repozytoria, rozpoznaje wzorce i generuje preset. Jeśli brakuje informacji — pyta o decyzje (architektura warstw, konwencje nazewnictwa, język testów itp.).
 
 ## Typowy flow
 
 ```
-/migrate cypress/spec.cy.ts --propose   → proposal do akceptacji
-/migrate cypress/spec.cy.ts             → pełna migracja (analiza + kod + review)
+claude-migrate init                            → zainstaluj agentów i komendy
+claude-migrate preset cypress-to-playwright    → załaduj preset
+/migrate source/spec.cy.ts --propose           → analiza i plan
+/migrate source/spec.cy.ts                     → pełna migracja
   → Code Review zespołu
-/migrate-cr                              → poprawki po CR
-/migrate-fix tests/spec.spec.ts          → naprawa failujących testów
-/migrate-split --all                     → plan podziału na MR
-/migrate-split freights-actions          → kopiuj spec + zależności do atomowego brancha
+/migrate-cr                                    → poprawki po CR
+/migrate-fix tests/spec.spec.ts                → naprawa failujących testów
 ```
 
 ## Wymagania
