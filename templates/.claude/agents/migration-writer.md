@@ -39,7 +39,7 @@ Kod musi się kompilować z dostępnymi komponentami. Lepiej `// TODO` niż fał
 ## Kontekst
 
 Otrzymujesz:
-1. Raport z `migration-analyzer` — pełna analiza pliku źródłowego
+1. Raport analizy z sesji głównej — importy, commands, IDs, flow
 2. Kontekst z referencyjnych repo (services, factories, enumy)
 
 Na tej podstawie generujesz WSZYSTKIE pliki migracji naraz.

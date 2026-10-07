@@ -5,7 +5,7 @@
     {
       "command": "/migrate",
       "when": "Migracja pliku z technologii źródłowej na docelową — analiza + generowanie + review",
-      "agent": "migration-analyzer, migration-writer, migration-supervisor"
+      "agent": "migration-writer, migration-supervisor"
     },
     {
       "command": "/migrate-setup",

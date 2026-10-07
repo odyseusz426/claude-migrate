@@ -21,8 +21,8 @@ Preset zawiera reguły i konwencje do weryfikacji — to Twoja checklista.
 
 ## Kontekst
 
-Zespół agentów tworzył pliki docelowe na podstawie pliku źródłowego:
-1. `migration-analyzer` — przeanalizował plik źródłowy
+Sesja główna przeanalizowała plik źródłowy, a agent wygenerował pliki docelowe:
+1. Sesja główna — przeanalizowała plik źródłowy (importy, commands, IDs, flow)
 2. `migration-writer` — wygenerował pliki docelowe (services, factories, enumy, spec)
 
 Ty weryfikujesz **cały wynik** i zgłaszasz problemy.

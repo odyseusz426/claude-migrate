@@ -1,6 +1,6 @@
 {
   "name": "@odyseusz426/claude-migrate",
-  "version": "2.1.0",
+  "version": "2.3.1",
   "description": "Universal migration toolkit for Claude Code (SDD extension)",
   "type": "module",
   "bin": {
@@ -8,6 +8,7 @@
   },
   "files": [
     "bin",
+    "lib",
     "templates",
     "skills.json"
   ],
@@ -17,6 +18,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/odyseusz426/claude-migrate.git"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
   },
   "author": "Marcin Lubiejewski",
   "license": "MIT"

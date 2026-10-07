@@ -22,6 +22,7 @@ npm i -g @odyseusz426/claude-migrate
 # W katalogu projektu (po sdd init):
 claude-migrate init                             # kopiuje agentów i komendy
 claude-migrate preset cypress-to-playwright     # ładuje preset technologiczny
+claude-migrate preset cypress-to-playwright --update  # aktualizuje do najnowszej wersji
 claude-migrate presets                          # lista dostępnych presetów
 claude-migrate --version                        # wersja paczki
 ```
@@ -58,7 +59,6 @@ sdd dirs add ../reference-repo     # repo referencyjne (opcjonalne)
 
 | Agent | Rola | Model |
 |-------|------|-------|
-| `migration-analyzer` | Analiza pliku źródłowego | opus |
 | `migration-writer` | Generowanie kodu docelowego | sonnet |
 | `migration-supervisor` | Review kompletności i spójności | opus |
 | `migration-cr` | Poprawki po Code Review | sonnet |
@@ -81,14 +81,23 @@ Komenda przeanalizuje oba repozytoria, rozpozna wzorce i wygeneruje preset. Brak
 
 ## Flow migracji
 
-```
-claude-migrate init + preset              → instalacja
-/migrate setup                             → konfiguracja (jeśli bez presetu)
-/migrate source/file --propose             → analiza i plan
-/migrate source/file                       → pełna migracja
-  → Code Review zespołu
-/migrate-cr                                → poprawki po CR
-/migrate-fix target/file                   → naprawa failujących testów
+```mermaid
+flowchart TD
+    A[claude-migrate init + preset] -->|instalacja| B{Preset załadowany?}
+    B -->|Tak| D["/migrate source/file --propose"]
+    B -->|Nie| C["/migrate setup"] --> D
+    D -->|analiza i plan| E["/migrate source/file"]
+    E -->|generowanie + review| F{Code Review zespołu}
+    F -->|uwagi| G["/migrate-cr"]
+    G --> F
+    F -->|approved| H{Testy przechodzą?}
+    H -->|Nie| I["/migrate-fix target/file"]
+    I --> H
+    H -->|Tak| J["✅ Migracja zakończona"]
+
+    style A fill:#4a9eff,color:#fff
+    style J fill:#2ea44f,color:#fff
+    style F fill:#f0ad4e,color:#fff
 ```
 
 ## Licencja

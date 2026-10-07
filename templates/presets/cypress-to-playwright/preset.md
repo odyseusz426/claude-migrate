@@ -1,5 +1,7 @@
 # Migration Preset: Cypress → Playwright
 
+preset_version: 1.0.0
+
 > Ten plik jest automatycznie czytany przez agentów migracyjnych.
 > Zawiera reguły, wzorce i mapowania specyficzne dla migracji Cypress → Playwright.
 

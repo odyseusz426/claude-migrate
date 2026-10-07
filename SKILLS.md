@@ -89,7 +89,6 @@ Tworzenie nowego presetu migracji — analizuje repo źródłowe i docelowe, roz
 
 | Agent | Rola | Model |
 |-------|------|-------|
-| `migration-analyzer` | Analiza pliku źródłowego — importy, commands, IDs, flow | opus |
 | `migration-writer` | Generowanie kodu docelowego (services + factories + testy) | sonnet |
 | `migration-supervisor` | Review kompletności i spójności (PASS/FAIL) | opus |
 | `migration-cr` | Aplikowanie uwag z Code Review | sonnet |
