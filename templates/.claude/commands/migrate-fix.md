@@ -17,7 +17,7 @@ argument-hint: <ścieżka do pliku testowego> [--all]
 ## Krok 0: Walidacja
 
 ```
-Czy .claude/migrate.preset.md istnieje?
+Czy migrate.preset.md istnieje?
   NIE → "Uruchom /migrate setup najpierw" → STOP
   TAK → załaduj preset (Read) — sekcja "Debug — znane pułapki"
 ```
@@ -58,7 +58,7 @@ Pracuj **sekwencyjnie**, od najprostszego do najtrudniejszego:
 
 ### 3a. Sprawdź znane pułapki (z presetu)
 
-Przeczytaj sekcję "Debug — znane pułapki" z `.claude/migrate.preset.md`.
+Przeczytaj sekcję "Debug — znane pułapki" z `migrate.preset.md`.
 Jeśli istnieje `ai/docs/patterns/migration-rules.md` — sprawdź też.
 
 Dla KAŻDEJ pułapki sprawdź czy test ją łamie.
@@ -129,7 +129,7 @@ Napraw WSZYSTKIE wystąpienia. Uruchom dotknięte testy.
 
 2. **`infrastructure-inventory.md`** — jeśli zmodyfikowano komponent
 
-3. **`.claude/migrate.preset.md`** — jeśli nowa reguła jest ogólna, dodaj do sekcji "Krytyczne reguły" i "Debug — znane pułapki"
+3. **`migrate.preset.md`** — jeśli nowa reguła jest ogólna, dodaj do sekcji "Krytyczne reguły" i "Debug — znane pułapki"
 
 ---
 

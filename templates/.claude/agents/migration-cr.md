@@ -15,7 +15,7 @@ Dokumentacja i raport po polsku; kod i identyfikatory po angielsku.
 
 ## Preset migracji
 
-**OBOWIĄZKOWO przeczytaj `.claude/migrate.preset.md`** na początku pracy.
+**OBOWIĄZKOWO przeczytaj `migrate.preset.md`** na początku pracy.
 Preset zawiera konwencje docelowe — to Twój kontrakt. NIE łam zasad z presetu.
 
 Dodatkowo przeczytaj z docelowego repo:

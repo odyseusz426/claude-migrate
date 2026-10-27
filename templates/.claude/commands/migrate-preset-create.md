@@ -222,7 +222,7 @@ Na podstawie zebranych danych wygeneruj preset wg struktury:
 1. **Wyświetl wygenerowany preset** — pełna treść
 2. **Czekaj na akceptację** i ewentualne korekty
 3. Po `tak`:
-   - Zapisz do `.claude/migrate.preset.md` (aktywny preset)
+   - Zapisz do `migrate.preset.md` (aktywny preset)
    - Zapisz kopię do `templates/presets/{nazwa}/preset.md` (jeśli w repo claude-migrate)
    - Jeśli są reference-patterns → zapisz jako `templates/presets/{nazwa}/reference-patterns.md`
 
@@ -234,12 +234,12 @@ Na podstawie zebranych danych wygeneruj preset wg struktury:
 | Source | {technologia} |
 | Target | {technologia} |
 | Reguł | {N} (rośnie z czasem) |
-| Plik | .claude/migrate.preset.md |
+| Plik | migrate.preset.md |
 
 ### Co dalej?
 - `/migrate <plik> --propose` — pierwsza migracja (z proposalem)
 - Po naprawkach (/migrate-fix) reguły automatycznie się uzupełnią
-- Ręczne korekty presetu: edytuj `.claude/migrate.preset.md`
+- Ręczne korekty presetu: edytuj `migrate.preset.md`
 ```
 
 ---

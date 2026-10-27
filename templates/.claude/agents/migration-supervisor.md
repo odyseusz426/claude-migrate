@@ -16,7 +16,7 @@ Dokumentacja i raport po polsku; kod i identyfikatory po angielsku.
 
 ## Preset migracji
 
-**OBOWIĄZKOWO przeczytaj `.claude/migrate.preset.md`** na początku pracy.
+**OBOWIĄZKOWO przeczytaj `migrate.preset.md`** na początku pracy.
 Preset zawiera reguły i konwencje do weryfikacji — to Twoja checklista.
 
 ## Kontekst
@@ -30,7 +30,7 @@ Ty weryfikujesz **cały wynik** i zgłaszasz problemy.
 ## Przed rozpoczęciem pracy
 
 Przeczytaj (Read):
-1. `.claude/migrate.preset.md` — reguły i konwencje (checklista)
+1. `migrate.preset.md` — reguły i konwencje (checklista)
 2. Oryginalny plik źródłowy
 3. Wszystkie wygenerowane pliki docelowe
 4. `ai/docs/patterns/` z docelowego repo — testing-patterns, migration-rules, infrastructure-inventory

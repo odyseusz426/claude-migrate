@@ -23,7 +23,7 @@ Parametry:
 ## Krok 0: Walidacja
 
 ```
-1. Czy .claude/migrate.preset.md istnieje?
+1. Czy migrate.preset.md istnieje?
    NIE → "Uruchom /migrate setup najpierw" → STOP
    TAK → załaduj preset (Read)
 
@@ -143,7 +143,7 @@ Na podstawie analizy, wygeneruj WSZYSTKIE pliki migracji naraz.
 ...
 
 ## Krytyczne reguły (z presetu)
-{lista reguł z .claude/migrate.preset.md}
+{lista reguł z migrate.preset.md}
 ```
 
 Agent zwraca treść WSZYSTKICH plików w jednym raporcie.

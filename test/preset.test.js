@@ -65,7 +65,7 @@ describe("runPreset", () => {
     assert.equal(result.list, false);
     assert.equal(result.presetName, "my-preset");
     assert.equal(result.version, "1.0.0");
-    assert.ok(existsSync(join(cwd, ".claude", "migrate.preset.md")));
+    assert.ok(existsSync(join(cwd, "migrate.preset.md")));
   });
 
   it("dry-run returns files without copying", () => {
@@ -75,7 +75,7 @@ describe("runPreset", () => {
 
     assert.equal(result.dryRun, true);
     assert.ok(result.files.length > 0);
-    assert.ok(!existsSync(join(cwd, ".claude", "migrate.preset.md")));
+    assert.ok(!existsSync(join(cwd, "migrate.preset.md")));
   });
 
   it("--update reports up-to-date when versions match", () => {
@@ -103,7 +103,7 @@ describe("runPreset", () => {
     assert.equal(result.version, "2.0.0");
     assert.ok(!result.upToDate);
 
-    const installed = readFileSync(join(cwd, ".claude", "migrate.preset.md"), "utf8");
+    const installed = readFileSync(join(cwd, "migrate.preset.md"), "utf8");
     assert.ok(installed.includes("New content"));
   });
 

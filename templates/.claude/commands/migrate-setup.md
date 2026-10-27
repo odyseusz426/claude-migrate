@@ -17,7 +17,7 @@ argument-hint: [--preset <nazwa>]
 ## Krok 1: Sprawdź stan
 
 ```
-Czy .claude/migrate.preset.md istnieje?
+Czy migrate.preset.md istnieje?
   TAK → Wyświetl aktualną konfigurację, zapytaj czy zmienić
   NIE → Przejdź do konfiguracji
 ```
@@ -42,7 +42,7 @@ Czy .claude/migrate.preset.md istnieje?
    ```
 
 3. **Załaduj preset:**
-   - Skopiuj `preset.md` → `.claude/migrate.preset.md`
+   - Skopiuj `preset.md` → `migrate.preset.md`
    - Skopiuj `reference-patterns.md` → `ai/reference-patterns/` (jeśli istnieje)
    - Potwierdź załadowanie
 
@@ -58,14 +58,14 @@ Czy .claude/migrate.preset.md istnieje?
    - Repo referencyjne (opcjonalne — istniejące testy w technologii docelowej do wzorowania)
 
 3. **Wygeneruj szkielet presetu:**
-   Przeczytaj referencyjne repo (jeśli podane) i wygeneruj `.claude/migrate.preset.md` z:
+   Przeczytaj referencyjne repo (jeśli podane) i wygeneruj `migrate.preset.md` z:
    - Technologie source/target
    - Rozpoznane wzorce z referencyjnego repo
    - Pusta sekcja "Krytyczne reguły" (do uzupełnienia w trakcie migracji)
 
 4. **Prezentuj wygenerowany preset** — czekaj na akceptację
 
-5. **Zapisz** `.claude/migrate.preset.md`
+5. **Zapisz** `migrate.preset.md`
 
 ---
 
@@ -93,7 +93,7 @@ Skonfiguruj repozytoria migracji:
 | Source | {technologia} |
 | Target | {technologia} |
 | Reguł | {N} |
-| Preset file | .claude/migrate.preset.md |
+| Preset file | migrate.preset.md |
 
 Gotowy do migracji. Użyj:
   /migrate <plik> --propose    → analiza i plan

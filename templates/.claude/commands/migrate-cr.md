@@ -20,7 +20,7 @@ Parametry:
 ## Krok 0: Walidacja
 
 ```
-Czy .claude/migrate.preset.md istnieje?
+Czy migrate.preset.md istnieje?
   NIE → "Uruchom /migrate setup najpierw" → STOP
   TAK → kontynuuj
 ```
@@ -37,7 +37,7 @@ Jeśli użytkownik nie wkleił uwag z CR:
 ## Krok 2: Analiza w sesji głównej (BEZ subagenta)
 
 1. **Przeczytaj pliki dotknięte CR** — zidentyfikuj z uwag
-2. **Przeczytaj `.claude/migrate.preset.md`** — konwencje do zastosowania
+2. **Przeczytaj `migrate.preset.md`** — konwencje do zastosowania
 3. **Przeczytaj `ai/docs/`** z docelowego repo — testing-patterns, conventions
 4. **Przeczytaj `ai/docs/patterns/infrastructure-inventory.md`** — co reużyć
 

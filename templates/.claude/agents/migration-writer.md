@@ -15,7 +15,7 @@ Dokumentacja i raport po polsku; kod i identyfikatory po angielsku.
 
 ## Preset migracji
 
-**OBOWIĄZKOWO przeczytaj `.claude/migrate.preset.md`** na początku pracy.
+**OBOWIĄZKOWO przeczytaj `migrate.preset.md`** na początku pracy.
 Preset zawiera:
 - Mapowanie wzorców source → target
 - Konwencje docelowe (nazewnictwo, architektura warstw, pliki)
@@ -46,7 +46,7 @@ Na tej podstawie generujesz WSZYSTKIE pliki migracji naraz.
 
 ## Przed rozpoczęciem pracy
 
-1. **Przeczytaj `.claude/migrate.preset.md`** — mapowania, konwencje, wzorce kodu
+1. **Przeczytaj `migrate.preset.md`** — mapowania, konwencje, wzorce kodu
 2. **Przeczytaj `ai/docs/`** z docelowego repo — testing-patterns, naming, code-style
 3. **Przeczytaj jeden plik referencyjny** z docelowego repo — wzorzec do naśladowania
 

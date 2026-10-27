@@ -62,7 +62,7 @@ Załaduj preset:   claude-migrate preset ${result.presets[0] || "<nazwa>"}
         console.log(`
 Preset "${result.presetName}"${versionInfo} załadowany.
 
-Plik presetu: .claude/migrate.preset.md
+Plik presetu: migrate.preset.md
 Gotowe do migracji: /migrate <plik-źródłowy> --propose
 `);
       }
@@ -90,7 +90,7 @@ Gotowe do migracji: /migrate <plik-źródłowy> --propose
 Claude Migrate v${pkg.version} — Uniwersalny toolkit migracji
 
 Użycie:
-  claude-migrate init                     instaluje agentów i komendy w projekcie
+  claude-migrate init                     instaluje agentów i komendy globalnie (~/.sdd/.claude/)
   claude-migrate init --force             nadpisuje istniejące pliki
   claude-migrate init --dry-run           podgląd co zostanie skopiowane
   claude-migrate preset <nazwa>           ładuje preset technologiczny
